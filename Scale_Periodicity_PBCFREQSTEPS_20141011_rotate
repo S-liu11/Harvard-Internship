@@ -1,0 +1,37 @@
+
+#CREATE STEP: GENERAL_STATIC, TO CONFIRM A BUCKLING MODE IN STRECHING BONDITION
+mdb.models['Model-1'].StaticStep(name='strech_1', previous='Initial', 
+    maxNumInc=1000, initialInc=0.01, maxInc=0.1, nlgeom=ON)
+
+#CREATE STEP: FREQUENCY, TO OBTAIN THE FIRST MODE
+mdb.models['Model-1'].FrequencyStep(name='freq_1', previous='strech_1', 
+    numEigen=5)
+	
+#CREATE INITIAL BC: NO_ROTATE, TO RESTRICT ROTATION
+mdb.models['Model-1'].DisplacementBC(name='no_rotate', createStepName='Initial', 
+    region=mdb.models['Model-1'].rootAssembly.instances['Part-RealH1'].sets['Set-Point'], u1=UNSET, u2=0.0, u3=UNSET, ur1=UNSET, ur2=UNSET, ur3=UNSET, 
+    amplitude=UNSET, fixed=OFF, distributionType=UNIFORM, fieldName='', 
+    localCsys=None)
+	
+#APPLY A MODERATE STRECHING
+mdb.models['Model-1'].DisplacementBC(name='moderate_strech', 
+    createStepName='strech_1', region=mdb.models['Model-1'].rootAssembly.instances['Part-RealH1'].sets['Set-Point'], u1=0.001, u2=UNSET, u3=UNSET, 
+    ur1=UNSET, ur2=UNSET, ur3=UNSET, amplitude=UNSET, fixed=OFF, 
+    distributionType=UNIFORM, fieldName='', localCsys=None)
+
+#DEACTIVE THE STRAIN BC IN FREQUENCY STEP	
+mdb.models['Model-1'].boundaryConditions['moderate_strech'].deactivate('freq_1')
+
+#CREATE, SAVE&SUBMIT JOBS
+Freqjobname = 'scale_frequency_U3PBC' + str(lencraratio)+'_'+ str(angl)+'_'+str(ratio)+'_rotate_'+str(dirc)+'_'+str(pot)
+mdb.Job(name=Freqjobname, model='Model-1', description='', type=ANALYSIS, 
+    atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=90, 
+    memoryUnits=PERCENTAGE, getMemoryFromAnalysis=True, 
+    explicitPrecision=SINGLE, nodalOutputPrecision=SINGLE, echoPrint=OFF, 
+    modelPrint=OFF, contactPrint=OFF, historyPrint=OFF, userSubroutine='', 
+    scratch='', multiprocessingMode=DEFAULT, numCpus=1, numGPUs=0)
+mdb.saveAs(pathName=Freqjobname)
+mdb.jobs[Freqjobname].submit(consistencyChecking=OFF)
+mdb.jobs[Freqjobname].waitForCompletion()
+print 'Scale_Periodicity_PBCFREQ.py Accomplished!!!'  
+time.sleep(2)

@@ -1,0 +1,57 @@
+#/////////////////////////////////////////////////////////////////////////
+#
+# IMPERFECTION  need to be started here!!!!!!!!!!
+#
+#/////////////////////////////////////////////////////////////////////////  
+#=========================================================================
+# IMPERFECTION
+#=========================================================================
+# Load Buckling Analysis Results
+#---------------------------------------------------------------
+
+openMdb(pathName= jobname + '.cae')
+ODB = openOdb(path = jobname + '.odb')
+
+pbpPartNodes=ODB.rootAssembly.instances['Part-RVE-1'.upper()].nodeSets['Set-all'.upper()]
+
+
+NewCoord=numpy.zeros((len(mdb.models['Model-1'].parts['Part-RVE'].nodes), 3))
+
+ImpFrames  = [   1    ]
+ImpWeights = [  0.03  ]*5
+
+for CImp in range(len(ImpFrames)):
+	cframe = ImpFrames[CImp]
+	firstFrame = ODB.steps['scale_buckling'].frames[cframe]
+	displacement = firstFrame.fieldOutputs['U']
+	pbpDispField = displacement.getSubset(region=pbpPartNodes)
+	pbpDisp = pbpDispField.values
+# Imperfection Using Buckling Analysis Results
+#---------------------------------------------------------------
+	ind=0;
+# Here, IMP is the % w.r.t. the RADIUS of Hole
+	IMP = ImpWeights[CImp]
+	for i in mdb.models['Model-1'].parts['Part-RVE'].nodes:
+		NewCoord[ind][0]=i.coordinates[0]+IMP*L*pbpDisp[ind].data[0]
+		NewCoord[ind][1]=i.coordinates[1]+IMP*L*pbpDisp[ind].data[1]
+		NewCoord[ind][2]=i.coordinates[2]+IMP*L*pbpDisp[ind].data[2]
+		ind=ind+1
+
+mdb.models['Model-1'].parts['Part-RVE'].editNode(
+    nodes=mdb.models['Model-1'].parts['Part-RVE'].nodes,
+    coordinates=NewCoord)
+
+mdb.models['Model-1'].rootAssembly.regenerate()
+
+
+
+
+#=========================================================================
+# Delete unnecessary steps
+#=========================================================================
+# 
+#---------------------------------------------------------------
+del mdb.models['Model-1'].steps['scale_buckling']
+
+
+

@@ -1,0 +1,98 @@
+###########################################################################
+#   SCSCD_VARIABLES_07292012
+#   by SICONG SHAN, version: 07292012  
+#   VERSIONS: 07292012, 
+###########################################################################
+#   PURPOSE:
+#       LOAD ALL THE VARAIBLES AND PARAMETERS INTO ABAQUS FOR LATER USE
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       FOR VARIABLES, THEY ARE DETAILED BELOW
+#       
+#       
+#       
+###########################################################################
+################################
+# RULE: ONLY CHANGE INDEPENDENT VARIABLES
+################################
+#=========================
+#0. MATLAB DEFINED PARAMETERS   
+#=========================
+# THIS SECTION IS RESERVED FOR SITUATION WHEN MATLAB CALLS ON ABAQUS SCRIPT
+
+
+
+#=========================
+#1. CONTROLLING PARAMETERS   
+#=========================
+ANAYSISTYPE = 'PERIODICITY'    # I PUT IT HERE JUST FOR A REMINDING PURPOSE
+
+#=========================                          
+#2. Loading related: H TENSOR : H = F - I   (DESCRIBES THE LOADING DIRECTION)
+#=========================
+#LOADINGCONDITION = 'EQUIBIAXIAL'     # 'EQUIBIAXIAL' or 'X-' or 'Y-'
+
+
+SweepRounds = 1  # must be integer!!!  
+
+LoadAngle = 1.25*pi   # the angle of loading path in     e_yy vs. e_xx plane
+MaxLoadNorm = 0.05  #  = sqrt(max_e_yy^2 + e_xx^2)
+LoadPathSeeds = numpy.linspace(0.,MaxLoadNorm, num=SweepRounds+1)[1:]
+
+H_P11= 0.1           #H_P is H in local corrdinates
+H_P12= UNSET		
+H_P21= UNSET
+H_P22= UNSET
+
+
+
+cs=cos(ang)
+sn=-sin(ang)
+
+
+
+
+H11= H_P11    #UNSET OR ACTUAL VALUE
+H12= H_P12  #UNSET OR ACTUAL VALUE
+H21= H_P21   #UNSET OR ACTUAL VALUE
+H22= H_P22   #UNSET OR ACTUAL VALUE
+
+SweepStart =  LoadPathSeeds[0]/MaxLoadNorm      #( -0.03)/H11 #0.8     # this is not an absolute number, it does not make any real sense, just a parameter
+SweepEnd =   LoadPathSeeds[-1]/MaxLoadNorm   #(-0.09)/H11  #1.0
+
+H11SPs = GetLoadingSweep(H11,[SweepStart,SweepEnd,SweepRounds]) #Sweep Points
+H12SPs = GetLoadingSweep(H12,[SweepStart,SweepEnd,SweepRounds])
+H21SPs = GetLoadingSweep(H21,[SweepStart,SweepEnd,SweepRounds])
+H22SPs = GetLoadingSweep(H22,[SweepStart,SweepEnd,SweepRounds])
+
+#=========================                          
+#3. PART-RELATED             
+#=========================
+# the basic geometry: (should be changable) ====================================
+L = 10.
+phi=0.5
+
+c1=0.0
+c2=0.0
+k=24 # use k-sided polygons to approximate the pore shape
+
+
+
+#epsilon=[]
+#epsilon.append([-0.15,-0.15,0])
+###epsilon=[[-0.15,-0.15,0],[-0.15,-0.1,0],[-0.15,-0.05,0],[-0.15,0,0],[-0.15,0.05,0]] #(epsilon_xx,epsilon_yy,epsilon_xy)
+
+#scale=[[0.01,0,0,0,0],[0,0.01,0,0,0],[0,0,0.01,0,0],[0,0,0,0.01,0]\
+#       ,[0,0,0,0,0.01],[0.01,0.01,0.01,0.01,0.01]] \
+       
+#Unit cell size
+xcellnum = 1    # change every run
+ycellnum = 1    # change every run
+
+
+
+
+
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'sCALE_Periodicity_VARIABLE_20141011.py Accomplished!!!'

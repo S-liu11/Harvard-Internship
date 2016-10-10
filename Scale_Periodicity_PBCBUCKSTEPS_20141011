@@ -1,0 +1,59 @@
+###########################################################################
+#   SCSCD_STEPS_INITIATION_FOR_PERIODICITY_ANALYSIS
+#   by SICONG SHAN, version: 09072012  
+#   VERSIONS: 07292012, 09072012,
+###########################################################################
+#   PURPOSE:
+#       INITIATE THE FIRST ROUND OF STEPS
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES:
+#           SweepRounds, CHECKPOINTS(VARIABLES), NEIGENFREQ,
+#       
+#       
+###########################################################################
+#CREATE STEP: LINEAR PERTURBATION-BUCKLE
+stepname='scale_buckling'
+bucklingstep=mdb.models['Model-1'].BuckleStep(maxIterations=100, name=stepname, numEigen=10, previous='Initial', vectors=18)
+
+mdb.models['Model-1'].fieldOutputRequests['F-Output-1'].setValues(
+    variables=('S', 'E', 'U','RF'))
+
+#CREATE PINNED CENTER
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, createStepName=
+    'scale_buckling', distributionType=UNIFORM, fieldName='', fixed=OFF
+    , localCsys=None, name='BC-CornerPinned-real', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].sets['Set-CornerBL']
+    , u1=0.0, u2=0.0, u3=0.0, ur1=UNSET, ur2=UNSET, ur3=UNSET)
+
+#CREATE VP DISPLACEMENT BC
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, 
+    createStepName='scale_buckling', distributionType=UNIFORM, fieldName=''
+    , fixed=OFF, localCsys=None, name='BC-VNReal-H1', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RealH1'].sets['Set-Point']
+    , u1=0.001, u2=0, ur3=UNSET)
+#   #   # H12, H22
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, 
+    createStepName='scale_buckling', distributionType=UNIFORM, fieldName=''
+    , fixed=OFF, localCsys=None, name='BC-VNReal-H2', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RealH2'].sets['Set-Point']
+    , u1=UNSET, u2=0.001, ur3=UNSET)
+
+#CREATE BUCKLING JOB
+jobname='scale_buckling_U3PBC' + str(mainj)+'_'+ str(angl)+'_'+str(ratio)
+mdb.Job(atTime=None, contactPrint=OFF, description='', echoPrint=OFF, 
+    explicitPrecision=SINGLE, getMemoryFromAnalysis=True, historyPrint=OFF, 
+    memory=90, memoryUnits=PERCENTAGE, model='Model-1', modelPrint=OFF, 
+    multiprocessingMode=DEFAULT, name=jobname, nodalOutputPrecision=SINGLE, 
+    numCpus=1, numGPUs=0, queue=None, scratch='', type=ANALYSIS, 
+    userSubroutine='', waitHours=0, waitMinutes=0)
+
+#CREATE&SUBMIT BUCKLE JOB
+mdb.jobs[jobname].submit(consistencyChecking=OFF)
+mdb.jobs[jobname].waitForCompletion()
+
+mdb.saveAs(pathName=jobname)
+time.sleep(2)
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'GSAS_Periodicity_4_STEPS_03272013.py Accomplished!!!'
+

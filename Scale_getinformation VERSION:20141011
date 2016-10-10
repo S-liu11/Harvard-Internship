@@ -1,0 +1,114 @@
+###########################################################################
+#   Scale_getinformation VERSION:20141011
+###########################################################################
+#   PURPOSE:
+#       READ THE DATA FROM ALL ODB FILES AND SAVE THEM INTO CSV FILES
+###########################################################################
+
+#INITIALIZING
+from part import *
+from material import *
+from section import *
+from assembly import *
+from step import *
+from interaction import *
+from load import *
+from mesh import *
+from job import *
+from sketch import *
+from visualization import *
+from connectorBehavior import *
+from abaqus import *
+from abaqusConstants import *
+from odbAccess import *
+from viewerModules import *
+
+#CREATE AND OPEN CSV FILES
+text_file1 = open('scale_stretching.csv','w')
+text_file2 = open('scale_shearing.csv','w')
+text_file3 = open('scale_stretching2.csv','w')
+
+#LOAD THIS SUBROUINE. SOME DEFINITIONS ARE NEEDED
+execfile('Scale_Periodicity_SCSCD_MODULE_20141011.py')
+
+#GETTING FORMAT
+text_file1.write('%2.10f,' % (0.))
+text_file2.write('%2.10f,' % (0.))
+text_file3.write('%2.10f,' % (0.))
+
+for i in range(0,11):
+	con=0.1+0.01*i
+	text_file1.write('%2.10f,' % (con))
+	text_file2.write('%2.10f,' % (con))
+	text_file3.write('%2.10f,' % (con))
+
+text_file1.write('\n')
+text_file2.write('\n')
+text_file3.write('\n')
+
+#LOOP TO GET DATA AND SAVE THEM
+for i in range(-10,16):
+	lencraratio=75+i
+	lc=0.01*lencraratio
+	#WRITE THE CRACKLENGTHRATIO IN THE FIRST COLUMN
+	text_file1.write('%2.10f,' % (lc))
+	text_file2.write('%2.10f,' % (lc))
+	text_file3.write('%2.10f,' % (lc))
+	for j in range(0,11):
+		perc=10+j
+		ODB = openOdb(path = 'scale_stretching_U3PBC'+str(lencraratio)+'_' + str(perc) + '_15.odb') #OPEN ODB FILES
+		#GET THREE CRITICAL POINTS
+		tipset=ODB.rootAssembly.instances['PART-RVE-1'].nodeSets['TIP']
+		sidetipset1=ODB.rootAssembly.instances['PART-RVE-1'].nodeSets['SIDETIP1']
+		sidetipset2=ODB.rootAssembly.instances['PART-RVE-1'].nodeSets['SIDETIP2']
+		#GET THE ORIGINAL COORDINATES
+		original0=tipset.nodes[0].coordinates
+		original1=sidetipset1.nodes[0].coordinates
+		original2=sidetipset2.nodes[0].coordinates
+		#FIND THE DISPLACEMENTS AFTER STRECHING STEP
+		disp0=ODB.steps['Scale-Stretching'].frames[-1].fieldOutputs['U'].getSubset(region=tipset).values[-1].data[:]
+		disp1=ODB.steps['Scale-Stretching'].frames[-1].fieldOutputs['U'].getSubset(region=sidetipset1).values[-1].data[:]
+		disp2=ODB.steps['Scale-Stretching'].frames[-1].fieldOutputs['U'].getSubset(region=sidetipset2).values[-1].data[:]
+		#FIND THE DISPLACEMENTS AFTER SHEARING STEP
+		twist0=ODB.steps['Scale-shearing'].frames[-1].fieldOutputs['U'].getSubset(region=tipset).values[-1].data[:]
+		twist1=ODB.steps['Scale-shearing'].frames[-1].fieldOutputs['U'].getSubset(region=sidetipset1).values[-1].data[:]
+		twist2=ODB.steps['Scale-shearing'].frames[-1].fieldOutputs['U'].getSubset(region=sidetipset2).values[-1].data[:]
+		#GET THE COORDINATES AFTER STRECHING STEP
+		coord0_1=original0+disp0
+		coord1_1=original1+disp1
+		coord2_1=original2+disp2
+		#GET THE COORDINATES AFTER SHEARING STEP
+		coord0_2=original0+twist0
+		coord1_2=original1+twist1
+		coord2_2=original2+twist2
+		#CALCULATE THE NORMAL VECTOR AFTER STRECHING STEP
+		vec1=MATCROSS(coord0_1-coord1_1, coord0_1-coord2_1)
+		norm1=vec1/VECNORM(vec1)
+		tvec1=([norm1[0], norm1[1], 0])
+		tnorm1=tvec1/VECNORM(tvec1)
+		#CALCULATE THE NORMAL VECTOR AFTER SHEARING STEP
+		vec2=MATCROSS(coord0_2-coord1_2, coord0_2-coord2_2)
+		norm2=vec2/VECNORM(vec2)
+		tvec2=([norm2[0], norm2[1], 0])
+		tnorm2=tvec2/VECNORM(tvec2)
+		#CALCULATE THE ELEVATING ANGLE AND AZIMUTH
+		stickangle1=acos(abs(norm1[2]))*180/pi
+		stickangle2=acos(abs(norm2[2]))*180/pi
+		twistangle=acos(abs(norm2[0]))*180/pi
+		#CLOSE THE ODB
+		ODB.close()
+		#SAVE THE DATA INTO THE CSV FILES
+		text_file1.write('%2.10f,' % stickangle1)
+		text_file2.write('%2.10f,' % twistangle)
+		text_file3.write('%2.10f,' % stickangle2)
+		#LET ME KNOW WHEN FINISHED FOR EACH ODB FILE
+		print'data_'+str(lencraratio)+'_' + str(perc)+'_get!'
+		
+	text_file1.write('\n')
+	text_file2.write('\n')
+	text_file3.write('\n')
+	
+#WHEN COMPLETING EDITING, CLOSE THE CSV FILES
+text_file1.close()
+text_file2.close()
+text_file3.close()

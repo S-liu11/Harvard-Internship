@@ -1,0 +1,76 @@
+###########################################################################
+#   TLFM_Periodicity_1-1_MAIN_INITIATION_03272013.py
+#   by SICONG SHAN, version: 07292012  
+###########################################################################
+#   PURPOSE:
+#       FOR INITIATION AND LOADING THE MODULES
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       'SCS_module.py'
+#       OTHER MODULES DETAILED BELOW
+#       
+#
+###########################################################################
+
+
+#=========================================================================
+# LOADING AND INITIATION
+#=========================================================================
+
+# ABAQUS RELATED ===============================================================
+from part import *
+from material import *
+from section import *
+from assembly import *
+from step import *
+from interaction import *
+from load import *
+from mesh import *
+from job import *
+from sketch import *
+from visualization import *
+from connectorBehavior import *
+
+from abaqus import *
+from abaqusConstants import *
+from odbAccess import *
+from viewerModules import *
+
+# math and operation related ===================================================
+import numpy
+import decimal 
+import operator
+import string
+
+# SYSTEM RELATED ===============================================================
+import datetime
+import math
+import os
+import random
+import shutil
+import time
+import visualization
+import sys
+
+# USER DEFINED =================================================================
+execfile('Scale_Periodicity_SCSCD_MODULE_20141011.py')    #!!!!!! SCS_module.py got all my pre-script functions
+
+
+# change the selection option by coordinates (instead of masks) ================
+session.journalOptions.setValues(replayGeometry=COORDINATE, recoverGeometry=COORDINATE)
+
+# CREATE A CLEAN MDB ===========================================================
+Mdb()
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'Scale_MAIN_INITIATION_20141011.py Accomplished!!!'
+
+
+
+
+
+
+
+
+
+

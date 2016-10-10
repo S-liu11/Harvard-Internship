@@ -1,0 +1,402 @@
+###########################################################################
+#   PURPOSE:
+#       LOAD THE FUNCTIONS FOR PERIODIC BOUNDARY CONDITIONS PROCESSING 
+#           
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES: (DEP FOR DEPENDENT VARIABLES)
+#            
+#       Functions:  
+#           DetPointOnline(pt1,pt2,ptTBD):
+#           REARRANGE(ALLPARTNODES,NODESET,AXIS):  
+#           NODELAB2LIST(ALLPARTNODES,NODELAB):     
+###########################################################################
+#====================================
+# 1.FUNCTION DEFINITION: 
+#====================================
+# define function of rule, determine if a point on line ========================
+# GIVEN TWO END POINTS, AND THE POINT TO BE DETERMINED==========================
+def DetPointOnline(pt1,pt2,ptTBD):
+# set tolerance
+    TOLR_ONLINE=1e-2;  # tolerance for decision of whether points are online
+    if abs((ptTBD[0]-pt1[0])*(pt2[1]-pt1[1])\
+         - (ptTBD[1]-pt1[1])*(pt2[0]-pt1[0]) ) < abs(TOLR_ONLINE):
+        return True
+    else:
+        return False
+
+# ORGANIZE AND REARRANGE IF NECESSARY, FOR PAIRING OF THE NODES ================
+def REARRANGE(ALLPARTNODES,NODESET,AXIS):
+#REARRANGE ACCORDING TO THE 'AXIS' COORDINATE
+    if AXIS == 'X':
+        FLAG = 0
+    if AXIS == 'Y':
+        FLAG = 1
+    if AXIS == 'Z':
+        FLAG = 2
+    TEMP=[]
+    #print NODESET
+    for NODELAB in NODESET:	
+        NODE=ALLPARTNODES.sequenceFromLabels((NODELAB,))
+        TEMP.append(NODE[0].coordinates[FLAG])
+    TEMP.sort()
+    #print TEMP
+    REARRANGED=[0]*len(TEMP)
+    for NODELAB in NODESET:
+        NODE=ALLPARTNODES.sequenceFromLabels((NODELAB,))
+        REARRANGED[TEMP.index(NODE[0].coordinates[FLAG])]=NODE[0].label
+    #print REARRANGED
+    return REARRANGED
+
+# assign nodes into my node list (just list format, not the format of a ABAQUS set), for sets
+#     with sorting requirements (for pairing purpose)===========================
+def NODELAB2LIST(ALLPARTNODES,NODELAB):
+#usage:
+#MYPBCSET11=NODELAB2LIST(ALLPARTNODES,LABPBC11)
+    NODELIST=[]
+    for LABEL in NODELAB:
+        NODELIST.append(ALLPARTNODES.sequenceFromLabels((LABEL,))[0])
+    return NODELIST
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'Scale_PBCSETSPROCESSING_PRELOADFUNCITONS.py Accomplished!!!\n'
+print '    functions:  DetPointOnline, REARRANGE, NODELAB2LIST\n'
+
+
+
+###########################################################################
+#   SCSCD_PBCSETSPROCESSING_LABELING2D_01082013
+#   by SICONG SHAN, version: 07292012, 01082013  
+###########################################################################
+#   PURPOSE:
+#       BEFORE CREATING THE SET, WE NEED TO GET THE LABELS FOR ALL THE NODES WHICH ARE INVOLVED IN THE SETS 
+#   WHY?:
+#    DUE TO THE LIMITATION OF ABAQUS, THE NODE SETS CAN ONLY BE SMOOTHLY AND EASILY
+#        CREATED THROUGH A LIST OF LABELS. THIS MEANS THAT ONE HAVE TO GET THE LABELS
+#        PRIORIOR TO GETTING THE SETS
+#           
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES: (DEP FOR DEPENDENT VARIABLES)
+#            
+#       Functions:  (EXTERNAL FROM: FUNCTIONS2D)
+#           DetPointOnline(pt1,pt2,ptTBD):
+#           REARRANGE(ALLPARTNODES,NODESET,AXIS):  
+#           NODELAB2LIST(ALLPARTNODES,NODELAB):     
+###########################################################################
+#====================================
+# 1. PREPARE ALL NODES (within one part !!!!!! ) FOR ITERATION
+#====================================
+ALLPARTNODES = mdb.models['Model-1'].parts['Part-RVE'].nodes
+#ALLNODES=mdb.models['Model-1'].rootAssembly.instances['Part-least_unit_cell-1'].nodes
+
+#====================================
+# 2. GET LABELS FOR ALL INTENDED SETS
+#====================================
+# INITIATE EMPTY LABEL LIST ====================================================
+LABPBC12=[]    
+LABPBC23=[]
+LABPBC34=[]
+LABPBC45=[]
+LABPBC56=[]
+LABPBC61=[]
+
+# GO THROUGH ALL THE NODES TO FILTER FOR THE NODES ON BOUNDARY =================
+for NODES in ALLPARTNODES:
+	COORDS = NODES.coordinates[0:2]
+	if DetPointOnline(AP1,AP2,COORDS):
+		LABPBC12.append(NODES.label)
+	if DetPointOnline(AP2,AP3,COORDS):
+		LABPBC23.append(NODES.label)
+	if DetPointOnline(AP3,AP4,COORDS):
+		LABPBC34.append(NODES.label)
+	if DetPointOnline(AP4,AP5,COORDS):
+		LABPBC45.append(NODES.label)
+	if DetPointOnline(AP5,AP6,COORDS):
+		LABPBC56.append(NODES.label)
+	if DetPointOnline(AP6,AP1,COORDS):
+		LABPBC61.append(NODES.label)
+		
+# Check now!
+#for clablist in [LABPBCL,LABPBCR,LABPBCB,LABPBCT]:
+#    if 
+
+# SORT AND REARRANGE THE NODES IN ALL EDGE NODES SETS ==========================
+LABPBC12=REARRANGE(ALLPARTNODES,LABPBC12,'Y')
+LABPBC45=REARRANGE(ALLPARTNODES,LABPBC45,'Y')
+LABPBC34=REARRANGE(ALLPARTNODES,LABPBC34,'X')
+LABPBC61=REARRANGE(ALLPARTNODES,LABPBC61,'X')
+LABPBC23=REARRANGE(ALLPARTNODES,LABPBC23,'Y')
+LABPBC56=REARRANGE(ALLPARTNODES,LABPBC56,'Y')
+
+
+# REMOVE THE CORNER NODES ======================================================
+if LABPBC12[-1]==LABPBC23[0]:
+    LABPBC2=LABPBC23[0] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC12.remove(LABPBC12[-1])
+    LABPBC23.remove(LABPBC23[0])
+
+if LABPBC23[-1]==LABPBC34[-1]:
+    LABPBC3=LABPBC23[-1] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC23.remove(LABPBC23[-1])
+    LABPBC34.remove(LABPBC34[-1])
+
+if LABPBC34[0]==LABPBC45[-1]:
+    LABPBC4=LABPBC45[-1] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC34.remove(LABPBC34[0])
+    LABPBC45.remove(LABPBC45[-1])
+
+if LABPBC45[0]==LABPBC56[-1]:
+    LABPBC5=LABPBC45[0] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC45.remove(LABPBC45[0])
+    LABPBC56.remove(LABPBC56[-1])
+
+if LABPBC56[0]==LABPBC61[0]:
+    LABPBC6=LABPBC56[0] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC56.remove(LABPBC56[0])
+    LABPBC61.remove(LABPBC61[0])
+
+if LABPBC61[-1]==LABPBC12[0]:
+    LABPBC1=LABPBC12[0] # SAVE THE CORNER POINTS FOR LATER USE
+    LABPBC61.remove(LABPBC61[-1])
+    LABPBC12.remove(LABPBC12[0])
+
+#====================================
+# 3. ASSIGN THE NODES INTO NODELAB2LIST, and then SETS!!
+#====================================
+# JUST A COMMENT: IT SEEMS MAKE THE NODELABELS INTO REAL NODE OBJECT IS A DETOUR?!!
+# LATER, WHEN YOU PAIRS THE PBC, YOU ARE STILL ACTUALLY USING THE LABELS ANYWAY...
+PBCSET12=NODELAB2LIST(ALLPARTNODES,LABPBC12)
+PBCSET23=NODELAB2LIST(ALLPARTNODES,LABPBC23)
+PBCSET34=NODELAB2LIST(ALLPARTNODES,LABPBC34)
+PBCSET45=NODELAB2LIST(ALLPARTNODES,LABPBC45)
+PBCSET56=NODELAB2LIST(ALLPARTNODES,LABPBC56)
+PBCSET61=NODELAB2LIST(ALLPARTNODES,LABPBC61)
+
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'Scale_PBCPROCESSING_LABELING2D.py Accomplished!!!'
+
+mdb.models['Model-1'].rootAssembly.rotate(angle=-angl, axisDirection=(0.0, 0.0, 
+    1.0), axisPoint=(0.0, 0.0, 0.0), instanceList=('Part-RVE-1', ))
+
+
+###########################################################################
+#   SCSCD_PBCSETSPROCESSING_PAIRING2D_07292012
+#   by SICONG SHAN, version: 07292012  
+###########################################################################
+#   PURPOSE:
+#       BEFORE CREATING THE SET, WE NEED TO GET THE LABELS FOR ALL THE NODES WHICH ARE INVOLVED IN THE SETS 
+#   WHY?:
+#    DUE TO THE LIMITATION OF ABAQUS, THE NODE SETS CAN ONLY BE SMOOTHLY AND EASILY
+#        CREATED THROUGH A LIST OF LABELS. THIS MEANS THAT ONE HAVE TO GET THE LABELS
+#        PRIORIOR TO GETTING THE SETS
+#           
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES: (DEP FOR DEPENDENT VARIABLES)
+#            
+#       Functions:  
+#           DetPointOnline(pt1,pt2,ptTBD):
+#           REARRANGE(ALLPARTNODES,NODESET,AXIS):  
+#           NODELAB2LIST(ALLPARTNODES,NODELAB):     
+###########################################################################
+#====================================
+# 5. Assigning, Pairing, and building equations or constraints
+#====================================
+# assign my node list into a higher level of list for iteration ================
+# CHANGE ITS STRUCTURE LATER. THIS MAKES THE CODE NOT EASY TO UNDERSTAND
+PBCSETPAIR_1=[PBCSET12,PBCSET45]
+PBCSETPAIR_2=[PBCSET23,PBCSET56]
+PBCSETPAIR_3=[PBCSET34,PBCSET61]
+PBCSETPAIRS=[PBCSETPAIR_1,PBCSETPAIR_2,PBCSETPAIR_3]
+NAMETEMP=[['12','45'],['23','56'],['34','61']]                #Modification Needed   WHY??
+
+# assign sorted node one by one into sets ======================================
+for ii in range(0,len(PBCSETPAIRS)):
+#    print 'PBC Pairing Loop Level 1: ',ii
+    for jj in range(0,len(PBCSETPAIR_1)):
+#        print 'PBC Paring loop Level 2: ',jj
+        for kk in range(0,len(PBCSETPAIRS[ii][jj])):
+#            print 'PBC Paring loop Level 3 : ', kk#, PBCSETSET[ii][jj][kk]
+            SETNAME='Set-PBC'+NAMETEMP[ii][jj]+'_'+str(kk+1)
+            mdb.models['Model-1'].parts['Part-RVE'].Set(name=SETNAME,
+                nodes=ALLPARTNODES.sequenceFromLabels((PBCSETPAIRS[ii][jj][kk].label,))) 
+			#must feed Set with a sequence. ??? SO TROUBLESOME... BECAUSE NODEARRAY OBJECT IS DIFFERENT FROM NODE OBJECT, AND THERE ARE NOT COMPATIBLE...
+
+# assign corner points into sets ==============================================
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner1', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC1,))) 
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner2', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC2,))) 
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner3', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC3,))) 
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner4', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC4,))) 
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner5', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC5,))) 
+mdb.models['Model-1'].parts['Part-RVE'].Set(name='Set-Corner6', nodes=ALLPARTNODES.sequenceFromLabels((LABPBC6,))) 
+
+
+#====================================
+#  regenerate
+#====================================
+mdb.models['Model-1'].rootAssembly.regenerate()
+
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'Scale_PBCSETSPROCESSING_PAIRING2D.py Accomplished!!!'
+
+#mdb.models['Model-1'].rootAssembly.rotate(angle=angl, axisDirection=(0.0, 0.0, 
+#    1.0), axisPoint=(0.0, 0.0, 0.0), instanceList=('Part-RVE-1', ))
+#WTF??
+###########################################################################
+#   SCSCD_PBCSETSPROCESSING_ESTEQUATION2D_07292012
+#   by SICONG SHAN, version: 07292012  
+###########################################################################
+#   PURPOSE:
+#       BEFORE CREATING THE SET, WE NEED TO GET THE LABELS FOR ALL THE NODES WHICH ARE INVOLVED IN THE SETS 
+#   WHY?:
+#    DUE TO THE LIMITATION OF ABAQUS, THE NODE SETS CAN ONLY BE SMOOTHLY AND EASILY
+#        CREATED THROUGH A LIST OF LABELS. THIS MEANS THAT ONE HAVE TO GET THE LABELS
+#        PRIORIOR TO GETTING THE SETS
+#           
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES: (DEP FOR DEPENDENT VARIABLES)
+#            
+#       Functions:  
+#              
+###########################################################################
+
+# MUST BE FOLLOWING SCSCD_PBCPROCESSING_PAIRING2D_07292012.py
+
+
+#mdb.models['Model-1'].parts['Part-1'].Set(name='SET-RVE-EL', elements=
+#    mdb.models['Model-1'].parts['Part-1'].elements) 
+#mdb.models['Model-1'].parts['Part-1'].Set(name='SET-RVE-ND', nodes=mdb.models['Model-1'].parts['Part-1'].nodes) 
+
+#build up equations
+#PBC
+mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes[1].coordinates
+for NODERANK in range(len(PBCSET12)):
+    SETNAME11='Part-RVE-1.Set-PBC12_'+str(NODERANK+1)
+    SETNAME12='Part-RVE-1.Set-PBC45_'+str(NODERANK+1)
+    for DOF in [1,2]: # go through 6 DOF
+        mdb.models['Model-1'].Equation(name=SETNAME11+'_'+SETNAME12+'_'+str(DOF), terms= 
+					((-1.0, SETNAME12,DOF), (1.0, SETNAME11, DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC45[NODERANK],))[0].coordinates[0]
+					-mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC12[NODERANK],))[0].coordinates[0]
+					 , 'Part-RealH1.Set-Point', DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC45[NODERANK],))[0].coordinates[1]
+					 -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC12[NODERANK],))[0].coordinates[1]
+					 , 'Part-RealH2.Set-Point', DOF)))
+					 
+	#In Scale_Periodicity, 3 additional DOFs should also be restricted. This is a 3D question.
+	for DOF in [3,4,5]:
+		mdb.models['Model-1'].Equation(name=SETNAME11+'_'+SETNAME12+'_'+str(DOF), terms= 
+					((-1.0, SETNAME11,DOF),
+					(1.0, SETNAME12, DOF)))
+
+					
+for NODERANK in range(len(PBCSET23)):
+    SETNAME21='Part-RVE-1.Set-PBC23_'+str(NODERANK+1)
+    SETNAME22='Part-RVE-1.Set-PBC56_'+str(NODERANK+1)
+    for DOF in [1,2]: # go through 6 DOF
+        mdb.models['Model-1'].Equation(name=SETNAME21+'_'+SETNAME22+'_'+str(DOF), terms= 
+					((-1.0, SETNAME22,DOF), (1.0, SETNAME21, DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC56[NODERANK],))[0].coordinates[0]
+					 -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC23[NODERANK],))[0].coordinates[0]
+					 , 'Part-RealH1.Set-Point', DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC56[NODERANK],))[0].coordinates[1]
+					 -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC23[NODERANK],))[0].coordinates[1]
+					 , 'Part-RealH2.Set-Point', DOF)))
+	for DOF in [3,4,5]:
+		mdb.models['Model-1'].Equation(name=SETNAME21+'_'+SETNAME22+'_'+str(DOF), terms= 
+					((-1.0, SETNAME21,DOF),
+					(1.0, SETNAME22, DOF)))
+
+					
+for NODERANK in range(len(PBCSET34)):
+    SETNAME21='Part-RVE-1.Set-PBC34_'+str(NODERANK+1)
+    SETNAME22='Part-RVE-1.Set-PBC61_'+str(NODERANK+1)
+    for DOF in [1,2]: # go through 6 DOF
+        mdb.models['Model-1'].Equation(name=SETNAME21+'_'+SETNAME22+'_'+str(DOF), terms= 
+					((-1.0, SETNAME22,DOF), (1.0, SETNAME21, DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC61[NODERANK],))[0].coordinates[0]
+					 -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC34[NODERANK],))[0].coordinates[0]
+					 , 'Part-RealH1.Set-Point', DOF),
+					 (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC61[NODERANK],))[0].coordinates[1]
+					 -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC34[NODERANK],))[0].coordinates[1]
+					 , 'Part-RealH2.Set-Point', DOF)))
+	for DOF in [3,4,5]:
+		mdb.models['Model-1'].Equation(name=SETNAME21+'_'+SETNAME22+'_'+str(DOF), terms= 
+					((-1.0, SETNAME21,DOF),
+					(1.0, SETNAME22, DOF)))
+
+#ADD PBC ON CORNER
+for DOF in [1,2]: # go through 6 DOF
+	mdb.models['Model-1'].Equation(name='LABPBC5_LABPBC1'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner5',DOF), (1.0, 'Part-RVE-1.Set-Corner1', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC5,))[0].coordinates[0]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC1,))[0].coordinates[0]
+    , 'Part-RealH1.Set-Point', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC5,))[0].coordinates[1]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC1,))[0].coordinates[1]
+    , 'Part-RealH2.Set-Point', DOF)))
+	
+	mdb.models['Model-1'].Equation(name='LABPBC4_LABPBC2'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner4',DOF), (1.0, 'Part-RVE-1.Set-Corner2', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC4,))[0].coordinates[0]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC2,))[0].coordinates[0]
+    , 'Part-RealH1.Set-Point', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC4,))[0].coordinates[1]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC2,))[0].coordinates[1]
+    , 'Part-RealH2.Set-Point', DOF)))
+
+	mdb.models['Model-1'].Equation(name='LABPBC6_LABPBC4'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner6',DOF), (1.0, 'Part-RVE-1.Set-Corner4', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC6,))[0].coordinates[0]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC4,))[0].coordinates[0]
+    , 'Part-RealH1.Set-Point', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC6,))[0].coordinates[1]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC4,))[0].coordinates[1]
+    , 'Part-RealH2.Set-Point', DOF)))	
+	
+	mdb.models['Model-1'].Equation(name='LABPBC3_LABPBC1'+'_'+str(DOF), terms= 
+    ((1.0, 'Part-RVE-1.Set-Corner3',DOF), (-1.0, 'Part-RVE-1.Set-Corner1', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC1,))[0].coordinates[0]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC3,))[0].coordinates[0]
+    , 'Part-RealH1.Set-Point', DOF),
+    (mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC1,))[0].coordinates[1]
+    -mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].nodes.sequenceFromLabels((LABPBC3,))[0].coordinates[1]
+    , 'Part-RealH2.Set-Point', DOF)))
+	
+	
+for DOF in [3,4,5]:
+	mdb.models['Model-1'].Equation(name='LABPBC5_LABPBC1'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner5',DOF),
+    (1.0, 'Part-RVE-1.Set-Corner1', DOF)))
+	
+	mdb.models['Model-1'].Equation(name='LABPBC4_LABPBC2'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner4',DOF),
+    (1.0, 'Part-RVE-1.Set-Corner2', DOF)))
+	
+	mdb.models['Model-1'].Equation(name='LABPBC6_LABPBC4'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner6',DOF),
+    (1.0, 'Part-RVE-1.Set-Corner4', DOF)))
+
+	mdb.models['Model-1'].Equation(name='LABPBC1_LABPBC3'+'_'+str(DOF), terms= 
+    ((-1.0, 'Part-RVE-1.Set-Corner3',DOF),
+    (1.0, 'Part-RVE-1.Set-Corner1', DOF)))
+
+#====================================
+#  regenerate
+#====================================
+mdb.models['Model-1'].rootAssembly.regenerate()
+
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+print 'Scale_Periodicity_PBCPROCESSING_20141011.py Accomplished!!!'
+
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, createStepName='Initial', distributionType=UNIFORM, fieldName='', fixed=OFF
+    , localCsys=None, name='BC-CornerPinned-real', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].sets['Set-Corner1']
+    , u1=0.0, u2=0.0, u3=0.0, ur1=UNSET, ur2=UNSET, ur3=UNSET)
+
+print 'Scale_Periodicity_5_BCS.py Accomplished!!!'
+

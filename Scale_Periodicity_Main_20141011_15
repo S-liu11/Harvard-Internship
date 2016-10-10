@@ -1,0 +1,105 @@
+###########################################################################
+#   Scale_Periodicity_MAIN_EXECUTION, modified by Shuang Liu
+###########################################################################
+#   PURPOSE:
+#       FOR EXECUTION OF EXTERNAL FILES ONE BY ONE TO FINISH THE JOB
+#       FROM MODELING -> MODIFICATION OF INPUT FILE -> JOB CREATION AND SUBMISSION
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+###########################################################################
+#THESE TWO STEPS DON'T NEED TO BE PUT IN THE CYCLE. TOTALLY THE SAME AS BEFORE.
+#=================
+# 0. Initiation of the environment
+#=================
+execfile('Scale_Periodicity_MAIN_INITIATION_20141011.py')
+ang=pi/2
+angl=90
+
+
+
+for mainj in range (15,16): 
+	#mainj controls the cracklengthratio. The cracklengthratio varies from 0.6 to 0.9
+	lengthcrackratio = 0.75+mainj*0.01 #this is used for geometric building
+	lencraratio = 75+mainj #this is used for naming
+	for maini in range(0,11):
+		#maini controls the percentage of the connecting part, varying from 0.1 to 0.3
+		con = 0.1+0.01*maini #this is used for mathematical algorism
+		perc = 10+maini #this is used for rotating and naming
+		conratio=lengthcrackratio*con
+	#=================
+	# 1. Loading variables AND NAMES
+	#=================
+		#if not ('IterativeCaller' in locals()):  #'ITERATIVE CALLER' IS IN TLFM_Periodicity_0-1_IterativeCaller_04222013
+		execfile('Scale_Periodicity_VARIABLES_20141011.py')
+	#=================
+	# 2. BUILD THE PARTS AND ASSEMBLE
+	#=================
+		execfile('Scale_Periodicity_MODELBUILDING_20141011.py')
+
+	#=================
+	# 3. PROCESS THE SETS
+	#=================
+		execfile('Scale_Periodicity_PBCPROCESSING_20141011.py')
+	
+	#=================
+	# 5 BOUNDARY CONDITIONS
+	#=================
+		execfile('Scale_Periodicity_PBCBCS_20141011.py')
+
+	#=================
+	# 4. BUCKLING STEP
+	#=================
+		execfile('Scale_Periodicity_PBCFREQSTEPS_20141011.py')
+
+
+
+	#=================
+	# 4. BUCKLING STEP
+	#=================
+		#execfile('Scale_Periodicity_PBCBUCKSTEPS_20141011.py')
+	#execfile('GSAS_Periodicity_4_MPCSTEPS_03272013.py')
+
+ 
+
+
+	#=================
+	# 6. Jobs
+	#=================
+#execfile('Scale_Periodicity_JOBS_20141011.py')
+
+
+
+	##############=================
+	############## Post-buckling process
+	##############=================
+	#=================
+	# 7. Introducing imperfection
+	#=================
+	#execfile('TLFM_PeriodicityPostBK_7_POSTBKPROCESSING_06062013.py')
+	# this script:   permute the intact/undeformed coordinates of the structures
+	#    modify key variables, modify steps, modify BCs, change names
+	 
+	#=================
+	# 8. Job resubmission
+	#=================
+	#execfile('TLFM_PeriodicityPostBK_8_JOBS_06062013.py')
+
+
+	#############=================
+	############# Get stress-free buckled shape
+	#############=================
+	##=================
+	## 9. Permute the mesh to have the deformed shape
+	##=================
+		#execfile('Scale_PeriodicityPostBK_POSTBKPROCESSING_20141011.py')
+		execfile('Scale_Periodicity_POSTFREQPROCESSING_20141011.py')
+	## this script:   permute the intact/undeformed coordinates of the structures, 
+	##       and write input file
+	
+		execfile('Scale_Periodicity_PBCCOMPSTEPS_20141011.py')
+
+
+
+	# LET ME KNOW IF YOU ARE FINISHED ==============================================
+		print 'Scale_Periodicity_MAIN_20141011.PY Accomplished!!!'
+

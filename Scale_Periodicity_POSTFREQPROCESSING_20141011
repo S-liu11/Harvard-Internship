@@ -1,0 +1,61 @@
+#/////////////////////////////////////////////////////////////////////////
+#
+# IMPERFECTION  need to be started here!!!!!!!!!!
+#
+#/////////////////////////////////////////////////////////////////////////  
+#=========================================================================
+# IMPERFECTION
+#=========================================================================
+# Load Buckling Analysis Results
+#---------------------------------------------------------------
+
+MDB = openMdb(pathName= Freqjobname + '.cae')
+ODB = openOdb(path = Freqjobname + '.odb')
+pbpPartNodes=ODB.rootAssembly.instances['Part-RVE-1'.upper()].nodeSets['Set-all'.upper()]
+
+#CREATE A MATRIX TO SAVE THE NEW COORDINATES OF ALL NODES
+NewCoord=numpy.zeros((len(mdb.models['Model-1'].parts['Part-RVE'].nodes), 3))
+
+#SELECT THE WANTED BUCKLING MODE AND IMPERFECTION WEIGHT
+ImpFrames  = [1]
+ImpWeights = [0.02]
+for CImp in range(len(ImpFrames)):
+	cframe = ImpFrames[CImp]
+	firstFrame = ODB.steps['freq_1'].frames[cframe]
+	displacement = firstFrame.fieldOutputs['U']
+	pbpDispField = displacement.getSubset(region=pbpPartNodes)
+	pbpDisp = pbpDispField.values
+# Imperfection Using Buckling Analysis Results
+#---------------------------------------------------------------
+	ind=0;
+	IMP = ImpWeights[CImp]
+#CALCULATE THE MODIFIED COORDINATES
+	for i in mdb.models['Model-1'].parts['Part-RVE'].nodes:
+		NewCoord[ind][0]=i.coordinates[0]+IMP*L*pbpDisp[ind].data[0]
+		NewCoord[ind][1]=i.coordinates[1]+IMP*L*pbpDisp[ind].data[1]
+		NewCoord[ind][2]=i.coordinates[2]+IMP*L*pbpDisp[ind].data[2]
+		ind=ind+1
+
+#SET THE NEW COORDINATES
+	mdb.models['Model-1'].parts['Part-RVE'].editNode(
+	nodes=mdb.models['Model-1'].parts['Part-RVE'].nodes,
+	coordinates=NewCoord)
+
+mdb.models['Model-1'].rootAssembly.regenerate()
+
+
+
+
+#=========================================================================
+# Delete unnecessary steps
+#=========================================================================
+# 
+#---------------------------------------------------------------
+del mdb.models['Model-1'].steps['strech_1']
+del mdb.models['Model-1'].steps['freq_1']
+del mdb.jobs[Freqjobname]
+ODB.close()
+print 'Original Coordinates Modified Successfully!'
+
+
+

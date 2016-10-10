@@ -1,0 +1,35 @@
+from part import *
+from material import *
+from section import *
+from assembly import *
+from step import *
+from interaction import *
+from load import *
+from mesh import *
+from job import *
+from sketch import *
+from visualization import *
+from connectorBehavior import *
+
+from abaqus import *
+from abaqusConstants import *
+from odbAccess import *
+from viewerModules import *
+
+text_file = open('scale_stretching_rotate_precise.csv','w')
+for i in range(33,34):
+	for j in range(5,10):
+		dirc=i+0.1*j
+		text_file.write('%2.10f,' % (dirc))
+		ODB = openOdb(path = 'scale_stretching_U3PBC80_90_rotate_'+str(i)+'_'+str(j)+'.odb')
+		tipset=ODB.rootAssembly.instances['PART-RVE-1'].nodeSets['TIP']
+		original=tipset.nodes[0].coordinates[2]
+		disp=ODB.steps['Scale-Stretching'].frames[-1].fieldOutputs['U'].getSubset(region=tipset).values[-1].data[2]
+		height=abs(original+disp)
+		ODB.close()
+		text_file.write('%2.10f,' % height)
+		print'data_rotate_'+str(i)+'.' + str(j)+'_get!'
+		text_file.write('\n')
+	
+
+text_file.close()

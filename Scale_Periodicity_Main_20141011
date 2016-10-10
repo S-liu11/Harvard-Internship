@@ -1,0 +1,87 @@
+###########################################################################
+#   Scale_Periodicity_MAIN_EXECUTION, modified by Shuang Liu
+###########################################################################
+#   PURPOSE:
+#       FOR EXECUTION OF EXTERNAL FILES ONE BY ONE TO FINISH THE JOB
+#       FROM MODELING -> MODIFICATION OF INPUT FILE -> JOB CREATION AND SUBMISSION
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+###########################################################################
+
+#THESE STEP DON'T NEED TO BE PUT IN THE CYCLE.
+#=================
+# 0. Initiation of the environment
+#=================
+execfile('Scale_Periodicity_MAIN_INITIATION_20141011.py')
+ang=pi/2 #THE VALUE OF THE PARALLELOGRAM RVE ANGLE
+angl=60
+
+
+
+for mainj in range (15,16): 
+	#mainj controls the cracklengthratio. The cracklengthratio varies from 0.6 to 0.9
+	lengthcrackratio = 0.75+mainj*0.01 #this is used for geometric building
+	lencraratio = 75+mainj #this is used for naming
+	for maini in range(-40,-39):
+		#maini controls the percentage of the connecting part, varying from 0.1 to 0.3
+		con = 0.5+0.01*maini #this is used for mathematical algorism
+		perc = 50+1*maini #this is used for rotating and naming
+		conratio=lengthcrackratio*con
+	#=================
+	# 1. Loading variables AND NAMES
+	#=================
+		#if not ('IterativeCaller' in locals()):  #'ITERATIVE CALLER' IS IN TLFM_Periodicity_0-1_IterativeCaller_04222013
+		execfile('Scale_Periodicity_VARIABLES_20141011.py')
+	#=================
+	# 2. BUILD THE PARTS AND ASSEMBLE
+	#=================
+		#execfile('Scale_Periodicity_MODELBUILDING_20141011.py')
+		execfile('Scale_Periodicity_MODELBUILDING_squarescale_20141208.py')
+		#execfile('Scale_Periodicity_MODELBUILDING_hexagon_20141126.py')
+		#execfile('Scale_Periodicity_MODELBUILDING_sparse_20141202.py')
+		#execfile('Scale_Periodicity_MODELBUILDING_hexagon_other_20141126.py')
+	#=================
+	# 3. PROCESS THE SETS
+	#=================
+		execfile('Scale_Periodicity_PBCPROCESSING_20141011.py')
+		#execfile('Scale_Periodicity_PBCPROCESSING_hexagon_20141126.py')	
+	#=================
+	# 4. FREQUENCY STEP
+	#=================
+	#FREQUENCY STEP IS USED TO GET BUCKLING MODE WHILE THE MODEL IS STRECHED. 
+	#IF BUCKLE STEP IS USED, THE BUCKLING MODE IN COMPRESSED CONDITION WILL OCCUR.
+		#execfile('Scale_Periodicity_PBCFREQSTEPS_20141011.py')
+		execfile('Scale_Periodicity_PBCFREQSTEPS_squarescale_20141208.py')
+		#execfile('Scale_Periodicity_PBCFREQSTEPS_sparse_20141202.py')
+		#execfile('Scale_Periodicity_PBCFREQSTEPS_hexagon_20141126.py')
+		#execfile('Scale_Periodicity_PBCFREQSTEPS_hexagon_other_20141126.py')
+
+	#=================
+	# 5. POSTBUCKLE, ADD IMPERFECTION
+	#=================
+		#execfile('Scale_PeriodicityPostBK_POSTBKPROCESSING_20141011.py')
+		execfile('Scale_Periodicity_POSTFREQPROCESSING_20141011.py')
+
+	#=================
+	# 6. GENERAL STATIC STEP, ADD NOMINAL STRAIN
+	#=================	
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_20141011.py')
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_squarescale_20141208.py')
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_20141011_rotate.py')
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_hexagon_20141126.py')
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_sparse_20141202.py')
+		#execfile('Scale_Periodicity_PBCSTRESTEPS_hexagon_other_20141126.py')
+		#execfile('Scale_Periodicity_PATHTEST_hexagon_20141126.py')
+		execfile('Scale_Periodicity_PATHTEST_squarescale_20141208.py')
+		#execfile('Scale_Periodicity_PATHTEST_20141011.py')
+		#execfile('Scale_Periodicity_PATHTEST1_20141011.py')
+		#execfile('Scale_Periodicity_PATHTEST2_20141011.py')
+		#execfile('Scale_Periodicity_PATHTEST3_20141011.py')
+		#execfile('Scale_Periodicity_PATHTEST4_20141011.py')
+		#execfile('Scale_Periodicity_PATHTEST5_20141011.py')
+
+
+
+	# LET ME KNOW IF YOU ARE FINISHED ==============================================
+		print 'Scale_Periodicity_MAIN_20141011.PY Accomplished!!!'
+

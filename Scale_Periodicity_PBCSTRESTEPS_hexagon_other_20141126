@@ -1,0 +1,77 @@
+###########################################################################
+#   SCSCD_STEPS_INITIATION_FOR_PERIODICITY_ANALYSIS
+#   by SICONG SHAN, version: 09072012  
+#   VERSIONS: 07292012, 09072012,
+###########################################################################
+#   PURPOSE:
+#       INITIATE THE FIRST ROUND OF STEPS
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       VARIABLES:
+#           SweepRounds, CHECKPOINTS(VARIABLES), NEIGENFREQ,
+#       
+#       
+###########################################################################
+#CREATE STEP: GENERAL STATIC-STRECHING
+mdb.models['Model-1'].StaticStep(maxNumInc=1000, initialInc=0.001, minInc=1e-10,maxInc=0.1, 
+    name= 'Scale-Stretching', nlgeom=ON, previous='Initial')
+#mdb.models['Model-1'].FieldOutputRequest(name='sticking', 
+#    createStepName='Scale-Stretching', variables=('S', 'E', 'U', 'RF'))
+
+NSTRAIN=0
+NS=int(100*NSTRAIN)
+NSTRAIN1=NSTRAIN
+NSTRAIN2=0.2
+
+# Externally Applied Strain Through the Virtual Points (X-DIR) =================
+# (engineering strain) =========================================================
+# Externally Applied Strain Through the Virtual Points (Y-DIR) =================
+# (engineering strain) =========================================================
+#   # for the real structure
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, createStepName='Initial'
+    , distributionType=UNIFORM, fieldName='', fixed=OFF
+    , localCsys=None, name='BC-CornerPinned-real', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RVE-1'].sets['Set-Corner1']
+    , u1=0.0, u2=0.0, u3=0.0, ur1=UNSET, ur2=UNSET, ur3=UNSET)
+
+#   #   # H11, H21
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, 
+    createStepName='Scale-Stretching', distributionType=UNIFORM, fieldName=''
+    , fixed=OFF, localCsys=None, name='BC-VNReal-H1', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RealH1'].sets['Set-Point']
+    , u1=UNSET, u2=0.0, ur3=UNSET)
+#   #   # H12, H22
+mdb.models['Model-1'].DisplacementBC(amplitude=UNSET, 
+    createStepName='Scale-Stretching', distributionType=UNIFORM, fieldName=''
+    , fixed=OFF, localCsys=None, name='BC-VNReal-H2', region=
+    mdb.models['Model-1'].rootAssembly.instances['Part-RealH2'].sets['Set-Point']
+    , u1=0.333, u2=UNSET, ur3=UNSET)
+	
+#CREATE SHEARING STEP
+mdb.models['Model-1'].StaticStep(name='Scale-shearing', 
+    previous='Scale-Stretching', maxNumInc=1000, initialInc=0.001, 
+    minInc=1e-10, maxInc=0.1)
+mdb.models['Model-1'].boundaryConditions['BC-VNReal-H1'].setValuesInStep(
+    stepName='Scale-shearing', u1=0.25)
+
+#CREATE STRETCH JOB
+Jobname = 'scale_stretching_U3PBC_hexagon_other_2' + str(lencraratio)+'_'+ str(perc)+'_'+str(NS) 
+mdb.Job(atTime=None, contactPrint=OFF, description='', echoPrint=OFF, 
+    explicitPrecision=SINGLE, getMemoryFromAnalysis=True, historyPrint=OFF, 
+#    memory=90, memoryUnits=PERCENTAGE, model='Model-1', modelPrint=OFF, 
+    memory=16, memoryUnits=GIGA_BYTES, model='Model-1', modelPrint=OFF, 
+    multiprocessingMode=DEFAULT, name=Jobname, nodalOutputPrecision=SINGLE, 
+    numCpus=4, numDomains=4, queue=None, scratch='', type=ANALYSIS, 
+    userSubroutine='', waitHours=0, waitMinutes=0)
+mdb.saveAs(pathName=Jobname)
+# LET ME KNOW IF YOU ARE FINISHED ==============================================
+
+#=========================================================================
+# 2. SUBMIT THE JOB WITH THE MODIFIED INPUT FILE
+#=========================================================================   
+mdb.jobs[Jobname].submit(consistencyChecking=OFF)
+    # mdb.jobs[CurJobName].submit(consistencyChecking=OFF, datacheckJob=True)
+mdb.jobs[Jobname].waitForCompletion()
+time.sleep(2)
+del mdb.models['Model-1'].steps['Scale-Stretching']
+del mdb.models['Model-1'].steps['Scale-shearing']

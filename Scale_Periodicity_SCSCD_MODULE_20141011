@@ -1,0 +1,161 @@
+## Automatically adapted for numpy.oldnumeric Mar 26, 2013 by ABQcaeK.exe
+
+###########################################################################
+#   SCSCD_MODULE_07302012
+#   by SICONG SHAN, version: 07302012
+#   VERSIONS: 07302012,   
+###########################################################################
+#   PURPOSE:
+#       LOAD ALL THE FUNCTIONS I MADE MYSELF
+###########################################################################
+#   INTERFACE FOR VARIABLES & FUNCTIONS & EXTERNAL FILES(SCRIPT+SUBROUTINE)
+#       FOR VARIABLES, THEY ARE DETAILED BELOW
+#       
+#       
+#       
+###########################################################################
+import random
+import numpy
+import time
+#=========================================================================
+# DEFINE FUCTIONS
+#=========================================================================
+#-------------------------------------------------------------------------
+# sum of all the component of array (ND*1)
+#-------------------------------------------------------------------------
+def MATSUM(a):
+    if len(a)==1:
+        b=a[0]
+    else:
+        b=0    
+        for k in range(0,len(a)):
+            b=b+a[k]
+    return b
+
+#-------------------------------------------------------------------------
+# cross product of two vector  (3D*1)
+#-------------------------------------------------------------------------
+def MATCROSS(a, b):
+    c = numpy.array([a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]])
+    return c
+
+#-------------------------------------------------------------------------
+# norm of vector  (3D*1)
+#-------------------------------------------------------------------------
+def VECNORM(a):
+    b = numpy.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2])
+    return b
+
+
+#-------------------------------------------------------------------------
+# check if a point is on the line connecting two points (2D*1)
+#-------------------------------------------------------------------------
+def POINT_ONLINE(a, b, c):
+    
+    # a & b are two points constructing a line.
+    # c is the range of y-coordinates
+    # d is a point to be checked
+    
+    f=(c[1]-a[1])*(b[0]-a[0]) - (b[1]-a[1]) * (c[0]-a[0])
+    
+    y=array([a[1],b[1]])
+    if ( int(DIGIT*min(y)) <= int(DIGIT*c[1]) ) and ( int(DIGIT*c[1]) <= int(DIGIT*max(y)) ):
+        g=0    
+    else:
+        g=1
+    
+    # result
+    if int(DIGIT*f)==0 and g==0:
+        d=1;        # yes, d is on the line
+    else:
+        d=0;        # no, d is not on the line
+    
+    return d
+
+#-------------------------------------------------------------------------
+# tensor product of two vectors (2D*1)
+#-------------------------------------------------------------------------
+def TENSOR_PRODUCT(a,b):
+    c= array( [ [ a[0]*b[0] , a[0]*b[1] ],
+                [ a[1]*b[0] , a[1]*b[1] ]] )
+    return c
+
+#-------------------------------------------------------------------------
+# calculate determinaNt (2D*2D)
+#-------------------------------------------------------------------------
+def MATDET(a):
+    
+    b = a[0][0]*a[1][1] - a[1][0]*a[0][1]
+    return b
+
+#-------------------------------------------------------------------------
+# Same as Matlab linspace, but only work on Numeric.array
+#-------------------------------------------------------------------------
+#import numpy.oldnumeric as Numeric # remember this
+def LINSPACESCS(start,end,dots): # note number of intervals = number of dots -1
+    newarray = 1.*Numeric.array(range(dots))/ (dots - 1) * (end-start) + start
+    return newarray
+
+def LINSPACEVECSCS(start,end,dots): # note number of intervals = number of dots -1
+    newarray = Numeric.zeros((dots,len(start)),'d')
+    for ii in range(len(start)):
+        temp = 1.*Numeric.array(range(dots))/ (dots - 1) * (end[ii]-start[ii]) + start[ii]
+        newarray[0:dots,ii] = temp
+    return newarray
+
+def GetLoadingSweep(Hnn,SweepInfo):
+    [SweepStart,SweepEnd,SweepRounds] = SweepInfo
+    if Hnn == UNSET:
+        HnnSPs = numpy.array([UNSET]*SweepRounds)  #Sweep Points
+    else: 
+        HnnSPs = Hnn * numpy.linspace(SweepStart,SweepEnd,SweepRounds)
+    return HnnSPs
+#-------------------------------------------------------------------------
+# Matrix Multiplication            # use Numeric.dot instead!!
+#-------------------------------------------------------------------------
+#def MATMULT(matrix1,matrix2):
+#    # Matrix multiplication
+#    if len(matrix1[0]) != len(matrix2):
+#        # Check matrix dimensions
+#        print 'Matrices must be m*n and n*p to multiply!'
+#    else:
+#        # Multiply if correct dimensions
+#        new_matrix = zero(len(matrix1),len(matrix2[0]))
+#        for i in range(len(matrix1)):
+#            for j in range(len(matrix2[0])):
+#                for k in range(len(matrix2)):
+#                    new_matrix[i][j] += matrix1[i][k]*matrix2[k][j]
+#        return new_matrix
+
+
+
+
+
+
+def ZEROS(m,n):
+    # Create zero matrix
+    new_matrix = [[0]*n]*m
+    return new_matrix
+ 
+def MATRAND(m,n):
+    # Create random matrix
+    new_matrix = [[random.random() for row in range(n)] for col in range(m)]
+    return new_matrix
+ 
+def MATSHOW(matrix):
+    # Print out matrix
+    for col in matrix:
+        print col 
+ 
+
+ 
+def TIME_MULT(matrix1,matrix2):
+    # Clock the time matrix multiplication takes
+    start = clock()
+    new_matrix = mult(matrix1,matrix2)
+    end = clock()
+    print 'Multiplication took ',end-start,' seconds'
+ 
+

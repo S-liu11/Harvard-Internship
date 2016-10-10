@@ -1,0 +1,35 @@
+from part import *
+from material import *
+from section import *
+from assembly import *
+from step import *
+from interaction import *
+from load import *
+from mesh import *
+from job import *
+from sketch import *
+from visualization import *
+from connectorBehavior import *
+from abaqus import *
+from abaqusConstants import *
+from odbAccess import *
+from viewerModules import *
+
+text_file = open('scale_stretching_rotate_all.csv','w')
+for i in range(45,61):
+	dirc=i
+	text_file.write('%2.10f,' % (dirc))
+	ODB = openOdb(path = 'scale_stretching_U3PBC80_90_rotate_'+str(dirc)+'.odb')
+	tipset=ODB.rootAssembly.instances['PART-RVE-1'].nodeSets['TIP']
+	height=ODB.steps['Scale-Stretching'].frames[-1].fieldOutputs['U'].getSubset(region=tipset).values[-1].data[2] #0.4 is added because the primary shape is imperfect.
+	ODB.close()
+	if height > 0. :
+		text_file.write('%2.10f,' % (height+0.1))
+	if height < 0. :
+		text_file.write('%2.10f,' % -(height+0.1))
+		
+	print'data_rotate_'+str(dir)+'_get!'
+	text_file.write('\n')
+	
+
+text_file.close()
